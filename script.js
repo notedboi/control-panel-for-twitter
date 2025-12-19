@@ -7163,6 +7163,7 @@ function shouldHideHomeTimelineItem(type, page) {
     case 'RETWEETED_QUOTE_TWEET_OF_MINE':
       // Show retweets of your own content only if showOwnRetweets is enabled
       return !config.showOwnRetweets
+    case 'COMMUNITY_TWEET':
     case 'TWEET':
       return page == separatedTweetsTimelineTitle
     case 'UNAVAILABLE_QUOTE_TWEET':
