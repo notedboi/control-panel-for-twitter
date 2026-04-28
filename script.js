@@ -156,6 +156,7 @@ const config = {
   hideLikeMetrics: true,
   hideListsNav: false,
   hideMetrics: false,
+  hideMetricsOnOtherTweetsOnly: false,
   hideMoreTweets: true,
   hideNotificationLikes: false,
   hideNotificationRetweets: false,
@@ -5348,19 +5349,22 @@ function configureHideMetricsCss(cssRules, hideCssSelectors) {
   ].filter(Boolean).join(', ')
 
   if (timelineMetricSelectors) {
+    let ownTweetScope = config.hideMetricsOnOtherTweetsOnly
+      ? ':not(.OwnTweet)'
+      : ''
     cssRules.push(
-      `[role="group"] button:is(${timelineMetricSelectors}) span { visibility: hidden; }`
+      `[data-testid="tweet"]${ownTweetScope} [role="group"] button:is(${timelineMetricSelectors}) span { visibility: hidden; }`
     )
   }
 
   if (config.hideQuoteTweetMetrics) {
-    hideCssSelectors.push('#cpftQuoteTweetCount')
+    hideCssSelectors.push(`${config.hideMetricsOnOtherTweetsOnly ? '[data-testid="tweet"]:not(.OwnTweet) ' : ''}#cpftQuoteTweetCount`)
   }
   if (config.hideRetweetMetrics) {
-    hideCssSelectors.push('#cpftRetweetCount')
+    hideCssSelectors.push(`${config.hideMetricsOnOtherTweetsOnly ? '[data-testid="tweet"]:not(.OwnTweet) ' : ''}#cpftRetweetCount`)
   }
   if (config.hideLikeMetrics) {
-    hideCssSelectors.push('#cpftLikeCount')
+    hideCssSelectors.push(`${config.hideMetricsOnOtherTweetsOnly ? '[data-testid="tweet"]:not(.OwnTweet) ' : ''}#cpftLikeCount`)
   }
 }
 
@@ -6223,6 +6227,7 @@ function onTimelineChange($timeline, page, options = {}) {
   let isOnProfileTimeline = isOnProfilePage()
   let isOnNotificationsTimeline = isOnNotificationsPage()
   let timelineHasSpecificTweetHandling = isOnHomeTimeline || isOnListTimeline || isOnProfileTimeline
+  let userScreenName = getUserScreenName()
 
   if (config.twitterBlueChecks != 'ignore' && (isUserTimeline || !timelineHasSpecificTweetHandling)) {
     processBlueChecks($timeline)
@@ -6256,6 +6261,7 @@ function onTimelineChange($timeline, page, options = {}) {
     let isBlueTweet = false
 
     if ($tweet != null) {
+      tagOwnTweet($tweet, userScreenName)
       itemType = getTweetType($tweet, checkSocialContext)
       if (timelineHasSpecificTweetHandling) {
         isReply = isReplyToPreviousTweet($tweet)
@@ -6482,6 +6488,7 @@ function onIndividualTweetTimelineChange($timeline, options) {
     else if ($tweet != null) {
       isFocusedTweet = $tweet.tabIndex == -1
       isReply = isReplyToPreviousTweet($tweet)
+      tagOwnTweet($tweet, userScreenName)
       if (isFocusedTweet) {
         itemType = 'FOCUSED_TWEET'
         hideItem = false
@@ -6843,6 +6850,26 @@ function processTwitterLogos($el) {
   for (let $svgPath of $el.querySelectorAll(Selectors.X_LOGO_PATH)) {
     twitterLogo($svgPath)
   }
+}
+
+/**
+ * @param {HTMLElement} $tweet
+ * @returns {?string}
+ */
+function getTweetAuthorScreenName($tweet) {
+  // Use the tweet permalink as the source of truth for the author, as
+  // User-Name anchors can refer to retweeters or quoted tweet authors.
+  let tweetPermalinkHref = $tweet.querySelector('a[href*="/status/"] time')?.closest('a')?.getAttribute('href')
+  return /^\/([a-zA-Z\d_]{1,20})\/status\/\d+/.exec(tweetPermalinkHref)?.[1]?.toLowerCase()
+}
+
+/**
+ * @param {HTMLElement} $tweet
+ * @param {string} userScreenName
+ */
+function tagOwnTweet($tweet, userScreenName) {
+  let tweetAuthorScreenName = getTweetAuthorScreenName($tweet)
+  $tweet.classList.toggle('OwnTweet', Boolean(userScreenName && tweetAuthorScreenName && tweetAuthorScreenName == userScreenName.toLowerCase()))
 }
 
 function processCurrentPage() {
