@@ -203,6 +203,9 @@
   "hideMetricsLabel": {
     "message": "Hide metrics"
   },
+  "hideMetricsOnOtherTweetsOnlyLabel": {
+    "message": "Only hide on other users' tweets"
+  },
   "hideMoreSlideOutMenuItemsOptionsLabel_desktop": {
     "message": "Hide \"More\" menu items you don't use"
   },

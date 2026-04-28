@@ -39,6 +39,7 @@ export type Config = {
   hideLikeMetrics: boolean
   hideListsNav: boolean
   hideMetrics: boolean
+  hideMetricsOnOtherTweetsOnly: boolean
   // XXX This now controls hiding all "Discover" suggestions
   hideMoreTweets: boolean
   hideNotificationLikes: boolean
