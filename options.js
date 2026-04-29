@@ -95,6 +95,7 @@ for (let translationId of [
   'hideNotificationRetweetsLabel',
   'hideProfileHeaderMetricsLabel',
   'hideProfileRetweetsLabel',
+  'showProfileRetweetsOnOwnProfileLabel',
   'showOwnRetweetsLabel',
   'hideQuoteTweetMetricsLabel',
   'hideReplyMetricsLabel',
@@ -249,6 +250,7 @@ const defaultConfig = {
   hideNotificationRetweets: false,
   hideNotifications: 'ignore',
   hideProfileRetweets: false,
+  showProfileRetweetsOnOwnProfile: true,
   showOwnRetweets: true,
   hideQuoteTweetMetrics: true,
   hideQuotesFrom: [],
@@ -516,6 +518,7 @@ function updateDisplay() {
   $body.classList.toggle('hidingExploreNav', optionsConfig.hideExploreNav)
   $body.classList.toggle('hidingMetrics', optionsConfig.hideMetrics)
   $body.classList.toggle('hidingNotifications', optionsConfig.hideNotifications == 'hide')
+  $body.classList.toggle('hidingProfileRetweets', optionsConfig.hideProfileRetweets)
   $body.classList.toggle('hidingQuotesFrom', shouldDisplayHideQuotesFrom())
   $body.classList.toggle('hidingSuggestedFollows', optionsConfig.hideSidebarContent || optionsConfig.hideSuggestedFollows)
   $body.classList.toggle('hidingTwitterBlueReplies', optionsConfig.hideTwitterBlueReplies)

@@ -221,6 +221,9 @@
   "hideProfileRetweetsLabel": {
     "message": "Masquer les Retweets dans les profils d'utilisateurs"
   },
+  "showProfileRetweetsOnOwnProfileLabel": {
+    "message": "Afficher les Retweets sur mon propre profil"
+  },
   "showOwnRetweetsLabel": {
     "message": "Afficher les retweets de mes propres publications dans les profils d'utilisateurs"
   },

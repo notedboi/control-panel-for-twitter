@@ -46,6 +46,7 @@ export type Config = {
   hideNotificationRetweets: boolean
   hideNotifications: 'ignore' | 'badges' | 'hide'
   hideProfileRetweets: boolean
+  showProfileRetweetsOnOwnProfile: boolean
   showOwnRetweets: boolean
   hideQuoteTweetMetrics: boolean
   hideQuotesFrom: string[]
