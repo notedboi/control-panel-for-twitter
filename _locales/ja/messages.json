@@ -221,6 +221,9 @@
   "hideProfileRetweetsLabel": {
     "message": "ユーザープロフィールでのリツイートを非表示にする"
   },
+  "showProfileRetweetsOnOwnProfileLabel": {
+    "message": "自分のプロフィールでリツイートを表示する"
+  },
   "showOwnRetweetsLabel": {
     "message": "ユーザープロフィールで自分の投稿のリツイートを表示"
   },

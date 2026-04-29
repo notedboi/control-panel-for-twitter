@@ -221,6 +221,9 @@
   "hideProfileRetweetsLabel": {
     "message": "在用户个人资料中隐藏转发"
   },
+  "showProfileRetweetsOnOwnProfileLabel": {
+    "message": "在我自己的个人资料中显示转发"
+  },
   "showOwnRetweetsLabel": {
     "message": "在用户个人资料中显示我自己帖子的转发"
   },

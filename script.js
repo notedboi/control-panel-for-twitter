@@ -162,6 +162,7 @@ const config = {
   hideNotificationRetweets: false,
   hideNotifications: 'ignore',
   hideProfileRetweets: false,
+  showProfileRetweetsOnOwnProfile: true,
   showOwnRetweets: true,
   hideQuoteTweetMetrics: true,
   hideQuotesFrom: [],
@@ -2599,6 +2600,12 @@ function isOnProfilePage() {
   if (!profilePathUsername) return false
   // twitter.com/user and its sub-URLs put @user in the title
   return currentPage.toLowerCase().includes(`${ltr ? '@' : ''}${profilePathUsername.toLowerCase()}${!ltr ? '@' : ''}`)
+}
+
+function isOnOwnProfilePage() {
+  let profilePathUsername = currentPath.match(URL_PROFILE_RE)?.[1]
+  let userScreenName = getUserScreenName()
+  return Boolean(profilePathUsername && userScreenName && profilePathUsername.toLowerCase() == userScreenName.toLowerCase())
 }
 
 function isOnQuoteTweetsPage() {
@@ -5350,7 +5357,7 @@ function configureHideMetricsCss(cssRules, hideCssSelectors) {
 
   if (timelineMetricSelectors) {
     let ownTweetScope = config.hideMetricsOnOtherTweetsOnly
-      ? ':not(.OwnTweet)'
+      ? '.OtherTweet'
       : ''
     cssRules.push(
       `[data-testid="tweet"]${ownTweetScope} [role="group"] button:is(${timelineMetricSelectors}) span { visibility: hidden; }`
@@ -5358,13 +5365,13 @@ function configureHideMetricsCss(cssRules, hideCssSelectors) {
   }
 
   if (config.hideQuoteTweetMetrics) {
-    hideCssSelectors.push(`${config.hideMetricsOnOtherTweetsOnly ? '[data-testid="tweet"]:not(.OwnTweet) ' : ''}#cpftQuoteTweetCount`)
+    hideCssSelectors.push(`${config.hideMetricsOnOtherTweetsOnly ? '[data-testid="tweet"].OtherTweet ' : ''}#cpftQuoteTweetCount`)
   }
   if (config.hideRetweetMetrics) {
-    hideCssSelectors.push(`${config.hideMetricsOnOtherTweetsOnly ? '[data-testid="tweet"]:not(.OwnTweet) ' : ''}#cpftRetweetCount`)
+    hideCssSelectors.push(`${config.hideMetricsOnOtherTweetsOnly ? '[data-testid="tweet"].OtherTweet ' : ''}#cpftRetweetCount`)
   }
   if (config.hideLikeMetrics) {
-    hideCssSelectors.push(`${config.hideMetricsOnOtherTweetsOnly ? '[data-testid="tweet"]:not(.OwnTweet) ' : ''}#cpftLikeCount`)
+    hideCssSelectors.push(`${config.hideMetricsOnOtherTweetsOnly ? '[data-testid="tweet"].OtherTweet ' : ''}#cpftLikeCount`)
   }
 }
 
@@ -6869,7 +6876,10 @@ function getTweetAuthorScreenName($tweet) {
  */
 function tagOwnTweet($tweet, userScreenName) {
   let tweetAuthorScreenName = getTweetAuthorScreenName($tweet)
-  $tweet.classList.toggle('OwnTweet', Boolean(userScreenName && tweetAuthorScreenName && tweetAuthorScreenName == userScreenName.toLowerCase()))
+  let isOwnTweet = Boolean(userScreenName && tweetAuthorScreenName && tweetAuthorScreenName == userScreenName.toLowerCase())
+  let isOtherTweet = Boolean(userScreenName && tweetAuthorScreenName && tweetAuthorScreenName != userScreenName.toLowerCase())
+  $tweet.classList.toggle('OwnTweet', isOwnTweet)
+  $tweet.classList.toggle('OtherTweet', isOtherTweet)
 }
 
 function processCurrentPage() {
@@ -7219,7 +7229,7 @@ function shouldHideProfileTimelineItem(type) {
       return false
     case 'RETWEET':
     case 'RETWEETED_QUOTE_TWEET':
-      return config.hideProfileRetweets
+      return config.hideProfileRetweets && !(config.showProfileRetweetsOnOwnProfile && isOnOwnProfilePage())
     case 'RETWEET_OF_MINE':
     case 'RETWEETED_QUOTE_TWEET_OF_MINE':
       // Show retweets of your own content only if showOwnRetweets is enabled
