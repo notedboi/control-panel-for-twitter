@@ -2866,7 +2866,16 @@ function getStateEntities() {
 
 function getUserScreenName() {
   let state = getState()
-  return state?.entities?.users?.entities?.[state?.session?.user_id]?.screen_name
+  return state?.entities?.users?.entities?.[state?.session?.user_id]?.screen_name ??
+    getScreenNameFromAvatarContainer(document.querySelector('button[data-testid="SideNav_AccountSwitcher_Button"] [data-testid^="UserAvatar-Container-"]'))
+}
+
+/**
+ * @param {?Element} $avatarContainer
+ * @returns {?string}
+ */
+function getScreenNameFromAvatarContainer($avatarContainer) {
+  return /^UserAvatar-Container-([a-zA-Z\d_]{1,20})$/.exec($avatarContainer?.getAttribute('data-testid'))?.[1]?.toLowerCase()
 }
 
 function getThemeColorFromState() {
@@ -5356,22 +5365,25 @@ function configureHideMetricsCss(cssRules, hideCssSelectors) {
   ].filter(Boolean).join(', ')
 
   if (timelineMetricSelectors) {
-    let ownTweetScope = config.hideMetricsOnOtherTweetsOnly
-      ? '.OtherTweet'
+    let metricScope = config.hideMetricsOnOtherTweetsOnly
+      ? '[data-testid="tweet"][data-cpft-other-tweet="true"] '
       : ''
-    cssRules.push(
-      `[data-testid="tweet"]${ownTweetScope} [role="group"] button:is(${timelineMetricSelectors}) span { visibility: hidden; }`
-    )
+    cssRules.push(`
+      ${metricScope}[role="group"] button:is(${timelineMetricSelectors}) span,
+      ${metricScope}[role="group"] button:is(${timelineMetricSelectors}) span * {
+        visibility: hidden !important;
+      }
+    `)
   }
 
   if (config.hideQuoteTweetMetrics) {
-    hideCssSelectors.push(`${config.hideMetricsOnOtherTweetsOnly ? '[data-testid="tweet"].OtherTweet ' : ''}#cpftQuoteTweetCount`)
+    hideCssSelectors.push(`${config.hideMetricsOnOtherTweetsOnly ? '[data-testid="tweet"][data-cpft-other-tweet="true"] ' : ''}#cpftQuoteTweetCount`)
   }
   if (config.hideRetweetMetrics) {
-    hideCssSelectors.push(`${config.hideMetricsOnOtherTweetsOnly ? '[data-testid="tweet"].OtherTweet ' : ''}#cpftRetweetCount`)
+    hideCssSelectors.push(`${config.hideMetricsOnOtherTweetsOnly ? '[data-testid="tweet"][data-cpft-other-tweet="true"] ' : ''}#cpftRetweetCount`)
   }
   if (config.hideLikeMetrics) {
-    hideCssSelectors.push(`${config.hideMetricsOnOtherTweetsOnly ? '[data-testid="tweet"].OtherTweet ' : ''}#cpftLikeCount`)
+    hideCssSelectors.push(`${config.hideMetricsOnOtherTweetsOnly ? '[data-testid="tweet"][data-cpft-other-tweet="true"] ' : ''}#cpftLikeCount`)
   }
 }
 
@@ -6864,6 +6876,9 @@ function processTwitterLogos($el) {
  * @returns {?string}
  */
 function getTweetAuthorScreenName($tweet) {
+  let tweetAvatarScreenName = getScreenNameFromAvatarContainer($tweet.querySelector('[data-testid^="UserAvatar-Container-"]'))
+  if (tweetAvatarScreenName) return tweetAvatarScreenName
+
   // Use the tweet permalink as the source of truth for the author, as
   // User-Name anchors can refer to retweeters or quoted tweet authors.
   let tweetPermalinkHref = $tweet.querySelector('a[href*="/status/"] time')?.closest('a')?.getAttribute('href')
@@ -6876,10 +6891,15 @@ function getTweetAuthorScreenName($tweet) {
  */
 function tagOwnTweet($tweet, userScreenName) {
   let tweetAuthorScreenName = getTweetAuthorScreenName($tweet)
-  let isOwnTweet = Boolean(userScreenName && tweetAuthorScreenName && tweetAuthorScreenName == userScreenName.toLowerCase())
+  if (!userScreenName || !tweetAuthorScreenName) return
+
+  if ($tweet.dataset.cpftTweetAuthorScreenName != null &&
+      $tweet.dataset.cpftTweetAuthorScreenName != tweetAuthorScreenName) return
+
+  $tweet.dataset.cpftTweetAuthorScreenName = tweetAuthorScreenName
+
   let isOtherTweet = Boolean(userScreenName && tweetAuthorScreenName && tweetAuthorScreenName != userScreenName.toLowerCase())
-  $tweet.classList.toggle('OwnTweet', isOwnTweet)
-  $tweet.classList.toggle('OtherTweet', isOtherTweet)
+  $tweet.dataset.cpftOtherTweet = String(isOtherTweet)
 }
 
 function processCurrentPage() {
