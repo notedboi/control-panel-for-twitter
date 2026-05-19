@@ -2392,8 +2392,8 @@ const URL_PROFILE_RE = /^\/([a-zA-Z\d_]{1,20})(?:\/(affiliates|with_replies|supe
 const URL_PROFILE_FOLLOWS_RE = /^\/[a-zA-Z\d_]{1,20}\/(?:verified_followers|follow(?:ing|ers|ers_you_follow)|creator-subscriptions\/subscriptions)\/?$/
 /** Matches the start of any individual Tweet URL, capturing the user and id */
 const URL_TWEET_BASE_RE = /^\/([a-zA-Z\d_]{1,20})\/status\/(\d+)/
-/** Matches the entire URL when viewing an individual Tweet, including optional end slash */
-const URL_TWEET_RE = /^\/([a-zA-Z\d_]{1,20})\/status\/(\d+)\/?$/
+/** Matches the entire URL when viewing an individual Tweet, including optional media path and end slash */
+const URL_TWEET_RE = /^\/([a-zA-Z\d_]{1,20})\/status\/(\d+)(?:\/(?:photo|video)\/\d+)?\/?$/
 /** Matches Tweet interactions page URLs, capturing the path segment for the current tab */
 const URL_TWEET_INTERACTIONS_RE = /^\/[a-zA-Z\d_]{1,20}\/status\/\d+\/(quotes|retweets|reposts|likes)\/?$/
 
@@ -2867,7 +2867,20 @@ function getStateEntities() {
 function getUserScreenName() {
   let state = getState()
   return state?.entities?.users?.entities?.[state?.session?.user_id]?.screen_name ??
-    getScreenNameFromAvatarContainer(document.querySelector('button[data-testid="SideNav_AccountSwitcher_Button"] [data-testid^="UserAvatar-Container-"]'))
+    getUserScreenNameFromAccountSwitcher()
+}
+
+/**
+ * @returns {?string}
+ */
+function getUserScreenNameFromAccountSwitcher() {
+  let $accountSwitcher = document.querySelector('button[data-testid="SideNav_AccountSwitcher_Button"]')
+  return getScreenNameFromAvatarContainer($accountSwitcher?.querySelector('[data-testid^="UserAvatar-Container-"]')) ??
+    /^@([a-zA-Z\d_]{1,20})$/.exec(
+      Array.from($accountSwitcher?.querySelectorAll('span') ?? [])
+        .find($span => /^@[a-zA-Z\d_]{1,20}$/.test($span.textContent))
+        ?.textContent
+    )?.[1]?.toLowerCase()
 }
 
 /**
@@ -5160,6 +5173,8 @@ const configureCss = (() => {
         hideCssSelectors.push(
           // Under timeline tweets
           '[data-testid="tweet"][tabindex="0"] [role="group"] > div:has(> a[href$="/analytics"])',
+          // Under the focused tweet (e.g. /status/…/photo/1)
+          '[data-testid="tweet"][tabindex="-1"] [role="group"] > div:has(> a[href$="/analytics"])',
           // In media modal
           '[aria-modal="true"] > div > div:first-of-type [role="group"] > div:has(> a[href$="/analytics"])',
         )
@@ -5266,6 +5281,8 @@ const configureCss = (() => {
         hideCssSelectors.push(
           // Under timeline tweets
           '[data-testid="tweet"][tabindex="0"] [role="group"] > div:has(> a[href$="/analytics"])',
+          // Under the focused tweet (e.g. mobile tweet page without mediaviewer)
+          '[data-testid="tweet"][tabindex="-1"] [role="group"] > div:has(> a[href$="/analytics"])',
           // In media viewer and media modal
           'body:is(.MediaViewer, .MobileMedia) [role="group"] > div:has(> a[href$="/analytics"])',
         )
@@ -5959,8 +5976,7 @@ function handlePopup($popup) {
   }
 
   if (desktop && !isDesktopMediaModalOpen &&
-      URL_MEDIA_RE.test(location.pathname) &&
-      currentPath != location.pathname) {
+      URL_MEDIA_RE.test(location.pathname)) {
     log('media modal opened')
     isDesktopMediaModalOpen = true
     observeDesktopModalTimeline($popup)
@@ -6908,7 +6924,8 @@ function getTweetAuthorScreenName($tweet) {
   // Use the tweet permalink as the source of truth for the author, as
   // User-Name anchors can refer to retweeters or quoted tweet authors.
   let tweetPermalinkHref = $tweet.querySelector('a[href*="/status/"] time')?.closest('a')?.getAttribute('href')
-  return /^\/([a-zA-Z\d_]{1,20})\/status\/\d+/.exec(tweetPermalinkHref)?.[1]?.toLowerCase()
+  return /^\/([a-zA-Z\d_]{1,20})\/status\/\d+/.exec(tweetPermalinkHref)?.[1]?.toLowerCase() ??
+    ($tweet.tabIndex == -1 ? location.pathname.match(URL_TWEET_BASE_RE)?.[1]?.toLowerCase() : null)
 }
 
 /**
